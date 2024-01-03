@@ -13,16 +13,16 @@
       <v-btn
         icon
         variant="flat"
-        @click="enableDoctor = !enableDoctor"
-        :color="enableDoctor ? 'primary' : undefined"
-        >ド</v-btn
+        @click="enableEngineer = !enableEngineer"
+        :color="enableEngineer ? 'primary' : undefined"
+        >エ</v-btn
       >
       <v-btn
         icon
         variant="flat"
-        @click="enableEngineer = !enableEngineer"
-        :color="enableEngineer ? 'primary' : undefined"
-        >エ</v-btn
+        @click="enableDoctor = !enableDoctor"
+        :color="enableDoctor ? 'primary' : undefined"
+        >ド</v-btn
       >
       <v-btn
         icon
@@ -112,7 +112,7 @@
                 display: 'inline-block',
                 width: '50%',
                 height: '100%',
-                backgroundColor: 'darkgreen',
+                backgroundColor: 'darkgoldenrod',
                 visibility: enableGurdian ? 'visible' : 'hidden',
               }"
             >
@@ -124,7 +124,7 @@
                 display: 'inline-block',
                 width: '50%',
                 height: '100%',
-                backgroundColor: 'darkgoldenrod',
+                backgroundColor: 'darkgreen',
                 visibility: enableCareTaker ? 'visible' : 'hidden',
               }"
             >
@@ -197,20 +197,70 @@
         fluid
         style="position: fixed; bottom: 0; pointer-events: none"
       >
+        <v-row
+          ><v-spacer />
+          <v-col
+            class="pa-1"
+            cols="auto"
+            v-for="statusType in statusTypes"
+            :key="statusType"
+          >
+            <v-badge>
+              <template v-slot:badge>
+                <v-icon :icon="mdiPen" />
+              </template>
+              <v-btn
+                :icon="statusIconTypeMap[statusType]"
+                @click="setStatusMode(statusType)"
+                style="pointer-events: all"
+                :color="statusMode == statusType ? 'primary' : undefined"
+              >
+              </v-btn>
+            </v-badge> </v-col
+        ></v-row>
+        <v-row
+          ><v-spacer />
+          <v-col
+            class="pa-1"
+            cols="auto"
+            v-for="raceType in raceTypes"
+            :key="raceType"
+          >
+            <v-badge>
+              <template v-slot:badge>
+                <v-icon :icon="mdiPen" />
+              </template>
+              <v-btn
+                :icon="raceTypeIconMap[raceType]"
+                @click="setRaceMode(raceType)"
+                style="pointer-events: all"
+                :color="raceMode == raceType ? 'primary' : undefined"
+              >
+              </v-btn>
+            </v-badge> </v-col
+        ></v-row>
         <v-row>
           <v-spacer />
+
           <v-col
+            class="pa-1"
             cols="auto"
             v-for="relationType in relationTypes"
             :key="relationType"
           >
-            <v-btn
-              icon
-              @click="setRelationMode(relationType)"
-              style="pointer-events: all"
-              :color="relationMode == relationType ? 'primary' : undefined"
-              >{{ relationType.charAt(0) }}</v-btn
-            >
+            <v-badge>
+              <template v-slot:badge>
+                <v-icon :icon="mdiArrowTopRightThin" />
+              </template>
+              <v-btn
+                icon
+                @click="setRelationMode(relationType)"
+                style="pointer-events: all"
+                :color="relationMode == relationType ? 'primary' : undefined"
+              >
+                {{ relationType.charAt(0) }}
+              </v-btn>
+            </v-badge>
           </v-col>
         </v-row>
       </v-container>
@@ -221,7 +271,13 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue";
 import { useTheme } from "vuetify";
-import { mdiWeatherSunny, mdiWeatherNight, mdiReload } from "@mdi/js";
+import {
+  mdiWeatherSunny,
+  mdiWeatherNight,
+  mdiReload,
+  mdiArrowTopRightThin,
+  mdiPen,
+} from "@mdi/js";
 import Arrow from "./components/Arrow.vue";
 
 const relationTypes = [
@@ -262,21 +318,26 @@ import CharacterIcon, {
   IconSize,
 } from "./components/CharacterIcon.vue";
 import { onMounted } from "vue";
+import {
+  RaceType,
+  raceTypeIconMap,
+  raceTypes,
+} from "./components/RaceIcon.vue";
+import {
+  StatusType,
+  statusIconTypeMap,
+  statusTypes,
+} from "./components/StatusIcon.vue";
 type CharacterIconType = InstanceType<typeof CharacterIcon>;
 const crew = ref<HTMLElement | null>(null);
 const gnosia = ref<HTMLElement | null>(null);
 const characters = reactive<Character[]>(
   characterNames.map((name) => ({
     name,
-    callDocter: false,
-    callEngineer: false,
-    isDoctor: false,
-    isEngineer: false,
-    isGurdian: false,
-    isCareTaker: false,
-    isGnosia: false,
-    isAcBeliever: false,
-    isBug: false,
+    isAlly: false,
+    isEnemy: false,
+    race: "不明",
+    status: "通常",
     position: { x: 0, y: 0 },
     active: false,
   }))
@@ -285,8 +346,7 @@ const relations = reactive<Relation[]>([]);
 function removeRelation(index: number) {
   relations.splice(index, 1);
 }
-const mounted = ref(false);
-onMounted(() => (mounted.value = true));
+
 const characterIconRefs = ref<(HTMLElement | null)[]>(
   characterNames.map((_) => null)
 );
@@ -322,33 +382,52 @@ const enableAcBeliever = ref(true);
 const enableBug = ref(true);
 const relationMode = ref<RelationType | null>(null);
 const relationFrom = ref<CharacterName | null>(null);
+const raceMode = ref<RaceType | null>(null);
+const statusMode = ref<StatusType | null>(null);
 
+function resetMode() {
+  relationMode.value = null;
+  raceMode.value = null;
+  statusMode.value = null;
+}
 function setRelationMode(relationType: RelationType) {
+  resetMode();
   relationMode.value = relationType;
 }
+function setRaceMode(raceType: RaceType) {
+  resetMode();
+  raceMode.value = raceType;
+}
+function setStatusMode(statusType: StatusType) {
+  resetMode();
+  statusMode.value = statusType;
+}
+
 function clickCharacter(characterName: CharacterName) {
   if (relationMode.value != null) {
     if (relationFrom.value == null) {
-      setRelationFrom(characterName);
+      relationFrom.value = characterName;
+      characters.find((character) => character.name == characterName)!.active =
+        true;
     } else {
-      setRelationTo(characterName);
+      relations.push({
+        type: relationMode.value!,
+        from: relationFrom.value!,
+        to: characterName,
+      });
+      relationMode.value = null;
+      relationFrom.value = null;
+      characters.forEach((character) => (character.active = false));
     }
+  } else if (raceMode.value != null) {
+    characters.find((character) => character.name == characterName)!.race =
+      raceMode.value;
+    raceMode.value = null;
+  } else if (statusMode.value != null) {
+    characters.find((character) => character.name == characterName)!.status =
+      statusMode.value;
+    statusMode.value = null;
   }
-}
-function setRelationFrom(characterName: CharacterName) {
-  relationFrom.value = characterName;
-  characters.find((character) => character.name == characterName)!.active =
-    true;
-}
-function setRelationTo(characterName: CharacterName) {
-  relations.push({
-    type: relationMode.value!,
-    from: relationFrom.value!,
-    to: characterName,
-  });
-  relationMode.value = null;
-  relationFrom.value = null;
-  characters.forEach((character) => (character.active = false));
 }
 
 function drag(name: CharacterName) {
@@ -373,15 +452,10 @@ function reset() {
   const crewHeight = crew.value!.clientHeight;
   characters.forEach((character, index) => {
     character.active = false;
-    character.callDocter = false;
-    character.callEngineer = false;
-    character.isDoctor = false;
-    character.isEngineer = false;
-    character.isGurdian = false;
-    character.isCareTaker = false;
-    character.isGnosia = false;
-    character.isAcBeliever = false;
-    character.isBug = false;
+    character.isAlly = false;
+    character.isEnemy = false;
+    character.race = "不明";
+    character.status = "通常";
     character.position.x = (crewWidth / 6) * (index % 6);
     character.position.y =
       crewHeight - IconSize * 3 + IconSize * Math.floor(index / 6);
@@ -396,6 +470,9 @@ watch(enableGurdian, reset);
 watch(enableCareTaker, reset);
 watch(enableAcBeliever, reset);
 watch(enableBug, reset);
+
+const mounted = ref(false);
+onMounted(() => (mounted.value = true));
 </script>
 
 <style lang="scss">

@@ -6,16 +6,31 @@
       left: character.position.x + 'px',
       top: character.position.y + 'px',
       backgroundColor: characterColorMap[character.name],
-      border: 'solid 5px black',
+      border: 'none',
       width: IconSize + 'px',
       height: IconSize + 'px',
       textAlign: 'center',
       borderRadius: IconSize / 2 + 'px',
-      filter: character.active ? 'drop-shadow(0px 0px 5px #fff)' : undefined,
+      filter:
+        (character.active ? ' drop-shadow(0px 0px 5px #fff)' : '') +
+        (character.status == 'コールドスリープ' ? ' ' : '') +
+        (character.status == '消滅' ? ' ' : ''),
     }"
     @mouseenter="inRange = true"
     @mouseleave="inRange = false"
   >
+    <div
+      v-if="character.status != '通常'"
+      class="filter"
+      :style="{
+        position: 'absolute',
+        width: IconSize + 'px',
+        height: IconSize + 'px',
+        borderRadius: IconSize / 2 + 'px',
+        backgroundColor: character.status == '消滅' ? 'red' : 'black',
+        opacity: 0.8,
+      }"
+    ></div>
     <div
       :style="{
         display: 'table-cell',
@@ -24,10 +39,23 @@
       }"
     >
       <span
-        style="background-color: white; border: solid 1px black; color: black"
+        :style="{
+          backgroundColor: teamColor,
+          border: 'solid 1px black',
+          color: teamTextColor,
+          fontSize: 'larger',
+        }"
         >{{ character.name }}</span
       >
     </div>
+    <StatusIcon
+      :status="character.status"
+      style="position: absolute; left: 0; bottom: 0"
+    />
+    <RaceIcon
+      :race="character.race"
+      style="position: absolute; right: 0; bottom: 0"
+    />
   </div>
 </template>
 
@@ -43,12 +71,13 @@ export const characterNames = [
   "シピ",
   "コメット",
   "ジョナス",
-  "ククルシカ",
+  "ｸｸﾙｼｶ",
   "オトメ",
   "沙明",
   "レムナン",
   "夕里子",
 ] as const;
+export type CharacterName = (typeof characterNames)[number];
 export const characterColorMap: { [name in CharacterName]: string } = {
   あなた: "palegreen",
   ジナ: "purple",
@@ -60,41 +89,62 @@ export const characterColorMap: { [name in CharacterName]: string } = {
   シピ: "orange",
   コメット: "yellow",
   ジョナス: "brown",
-  ククルシカ: "crimson",
+  ｸｸﾙｼｶ: "crimson",
   オトメ: "pink",
   沙明: "black",
   レムナン: "white",
   夕里子: "gray",
 };
-export type CharacterName = (typeof characterNames)[number];
+
 export interface Position {
   x: number;
   y: number;
 }
 export interface Character {
   name: CharacterName;
-  callDocter: boolean;
-  callEngineer: boolean;
-  isDoctor: boolean;
-  isEngineer: boolean;
-  isGurdian: boolean;
-  isCareTaker: boolean;
-  isAcBeliever: boolean;
-  isBug: boolean;
-  isGnosia: boolean;
+  isAlly: boolean;
+  isEnemy: boolean;
   position: Position;
   active: boolean;
+  race: RaceType;
+  status: StatusType;
 }
 export const IconSize = 100;
 </script>
 <script setup lang="ts">
-import { ref, toRefs } from "vue";
+import { computed, ref, toRefs } from "vue";
+import RaceIcon, { RaceType } from "./RaceIcon.vue";
+import StatusIcon, { StatusType } from "./StatusIcon.vue";
 
 const props = defineProps<{
   character: Character;
 }>();
 const inRange = ref(false);
 const { character } = toRefs(props);
+const isEnemy = computed(() => {
+  return (
+    ["AC主義者", "バグ", "グノーシア"].includes(character.value.race) ||
+    character.value.isEnemy
+  );
+});
+const isAlly = computed(() => {
+  return character.value.race == "人間";
+});
+const teamColor = computed(() => {
+  if (isEnemy.value) {
+    return "darkred";
+  }
+  if (isAlly.value) {
+    return "limegreen";
+  }
+  return "white";
+});
+const teamTextColor = computed(() => {
+  if (isEnemy.value || isAlly.value) {
+    return "white";
+  }
+  return "black";
+});
 </script>
 
 <style lang="scss" scoped>
