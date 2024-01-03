@@ -11,6 +11,7 @@
       height: IconSize + 'px',
       textAlign: 'center',
       borderRadius: IconSize / 2 + 'px',
+      filter: character.active ? 'drop-shadow(0px 0px 5px #fff)' : undefined,
     }"
     @mouseenter="inRange = true"
     @mouseleave="inRange = false"

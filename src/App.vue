@@ -190,6 +190,7 @@
           :from="getCharacterIcon(relation.from)"
           :to="getCharacterIcon(relation.to)"
           :stroke-color="getStrokeColor(relation.type)"
+          @dblclick="removeRelation(index)"
         />
       </div>
       <v-container
@@ -198,36 +199,17 @@
       >
         <v-row>
           <v-spacer />
-          <v-col cols="auto">
+          <v-col
+            cols="auto"
+            v-for="relationType in relationTypes"
+            :key="relationType"
+          >
             <v-btn
               icon
-              @click="setRelationMode('庇う')"
+              @click="setRelationMode(relationType)"
               style="pointer-events: all"
-              >庇</v-btn
-            >
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
-              icon
-              @click="setRelationMode('疑う')"
-              style="pointer-events: all"
-              >疑</v-btn
-            >
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
-              icon
-              @click="setRelationMode('人間だ')"
-              style="pointer-events: all"
-              >人</v-btn
-            >
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
-              icon
-              @click="setRelationMode('グノーシアだ')"
-              style="pointer-events: all"
-              >グ</v-btn
+              :color="relationMode == relationType ? 'primary' : undefined"
+              >{{ relationType.charAt(0) }}</v-btn
             >
           </v-col>
         </v-row>
@@ -242,7 +224,14 @@ import { useTheme } from "vuetify";
 import { mdiWeatherSunny, mdiWeatherNight, mdiReload } from "@mdi/js";
 import Arrow from "./components/Arrow.vue";
 
-type RelationType = "疑う" | "庇う" | "人間だ" | "敵だ" | "グノーシアだ";
+const relationTypes = [
+  "疑う",
+  "庇う",
+  "人間だ",
+  "敵だ",
+  "グノーシアだ",
+] as const;
+type RelationType = (typeof relationTypes)[number];
 interface Relation {
   from: CharacterName;
   to: CharacterName;
@@ -293,6 +282,9 @@ const characters = reactive<Character[]>(
   }))
 );
 const relations = reactive<Relation[]>([]);
+function removeRelation(index: number) {
+  relations.splice(index, 1);
+}
 const mounted = ref(false);
 onMounted(() => (mounted.value = true));
 const characterIconRefs = ref<(HTMLElement | null)[]>(
@@ -345,6 +337,8 @@ function clickCharacter(characterName: CharacterName) {
 }
 function setRelationFrom(characterName: CharacterName) {
   relationFrom.value = characterName;
+  characters.find((character) => character.name == characterName)!.active =
+    true;
 }
 function setRelationTo(characterName: CharacterName) {
   relations.push({
@@ -354,6 +348,7 @@ function setRelationTo(characterName: CharacterName) {
   });
   relationMode.value = null;
   relationFrom.value = null;
+  characters.forEach((character) => (character.active = false));
 }
 
 function drag(name: CharacterName) {
@@ -391,6 +386,7 @@ function reset() {
     character.position.y =
       crewHeight - IconSize * 3 + IconSize * Math.floor(index / 6);
   });
+  relations.splice(0, relations.length);
 }
 
 watch(crew, reset);

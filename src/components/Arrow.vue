@@ -1,5 +1,6 @@
 <template>
   <div
+    class="arrow"
     :style="{
       position: 'absolute',
       left: 0,
@@ -141,3 +142,9 @@ const degree = computed(() => {
   return degree;
 });
 </script>
+
+<style lang="scss">
+.arrow:hover {
+  filter: drop-shadow(0px 0px 5px #fff);
+}
+</style>
