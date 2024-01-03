@@ -63,7 +63,12 @@
         <v-list :items="['hoge', 'fuga']"></v-list>
       </v-navigation-drawer>
 
-      <div id="whiteboard" @mousemove="mousemove" @mouseup="drop">
+      <div
+        id="whiteboard"
+        @mousemove="mousemove"
+        @mouseup="drop"
+        style="user-select: none"
+      >
         <div style="display: inline-block; width: 50%; height: 100%">
           <div
             class="role"
@@ -187,20 +192,43 @@
           :stroke-color="getStrokeColor(relation.type)"
         />
       </div>
-      <v-container fluid style="position: fixed; bottom: 0">
+      <v-container
+        fluid
+        style="position: fixed; bottom: 0; pointer-events: none"
+      >
         <v-row>
           <v-spacer />
           <v-col cols="auto">
-            <v-btn icon @click="setRelationMode('庇う')">庇</v-btn>
+            <v-btn
+              icon
+              @click="setRelationMode('庇う')"
+              style="pointer-events: all"
+              >庇</v-btn
+            >
           </v-col>
           <v-col cols="auto">
-            <v-btn icon @click="setRelationMode('疑う')">疑</v-btn>
+            <v-btn
+              icon
+              @click="setRelationMode('疑う')"
+              style="pointer-events: all"
+              >疑</v-btn
+            >
           </v-col>
           <v-col cols="auto">
-            <v-btn icon @click="setRelationMode('人間だ')">人</v-btn>
+            <v-btn
+              icon
+              @click="setRelationMode('人間だ')"
+              style="pointer-events: all"
+              >人</v-btn
+            >
           </v-col>
           <v-col cols="auto">
-            <v-btn icon @click="setRelationMode('グノーシアだ')">グ</v-btn>
+            <v-btn
+              icon
+              @click="setRelationMode('グノーシアだ')"
+              style="pointer-events: all"
+              >グ</v-btn
+            >
           </v-col>
         </v-row>
       </v-container>
@@ -214,7 +242,7 @@ import { useTheme } from "vuetify";
 import { mdiWeatherSunny, mdiWeatherNight, mdiReload } from "@mdi/js";
 import Arrow from "./components/Arrow.vue";
 
-type RelationType = "疑う" | "庇う" | "人間だ" | "グノーシアだ";
+type RelationType = "疑う" | "庇う" | "人間だ" | "敵だ" | "グノーシアだ";
 interface Relation {
   from: CharacterName;
   to: CharacterName;
@@ -286,8 +314,10 @@ function getStrokeColor(relationType: RelationType) {
       return "darkmagenta";
     case "人間だ":
       return "lightgray";
-    case "グノーシアだ":
+    case "敵だ":
       return "darkred";
+    case "グノーシアだ":
+      return "red";
   }
 }
 const currentCharacter = ref<Character | null>(null);
