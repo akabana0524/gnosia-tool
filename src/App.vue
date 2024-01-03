@@ -69,23 +69,53 @@
         @mouseup="drop"
         style="user-select: none"
       >
-        <div style="display: inline-block; width: 50%; height: 100%">
-          <div
-            class="role"
-            :style="{
-              width: '100%',
-              height: '50%',
-              backgroundColor: 'darkgray',
-            }"
-            ref="crew"
-          >
-            乗員
+        <div style="display: inline-block; width: 80%; height: 100%">
+          <div style="width: 100%; height: 60%">
+            <div style="display: inline-block; width: 70%; height: 100%">
+              <div
+                class="role"
+                :style="{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'darkgray',
+                }"
+                ref="crew"
+              >
+                乗員
+              </div>
+            </div>
+            <div style="display: inline-block; width: 30%; height: 100%">
+              <div
+                class="role"
+                :style="{
+                  display: 'inline-block',
+                  width: '100%',
+                  height: '50%',
+                  backgroundColor: 'darkgoldenrod',
+                  visibility: enableGurdian ? 'visible' : 'hidden',
+                }"
+              >
+                守護天使
+              </div>
+              <div
+                class="role"
+                :style="{
+                  display: 'inline-block',
+                  width: '100%',
+                  height: '50%',
+                  backgroundColor: 'darkgreen',
+                  visibility: enableCareTaker ? 'visible' : 'hidden',
+                }"
+              >
+                留守番
+              </div>
+            </div>
           </div>
           <div
             class="role"
             :style="{
               width: '100%',
-              height: '25%',
+              height: '20%',
               backgroundColor: 'darkblue',
               visibility: enableEngineer ? 'visible' : 'hidden',
             }"
@@ -96,7 +126,7 @@
             class="role"
             :style="{
               width: '100%',
-              height: '25%',
+              height: '20%',
               backgroundColor: 'darkgreen',
               visibility: enableDoctor ? 'visible' : 'hidden',
             }"
@@ -104,74 +134,10 @@
             ドクター
           </div>
         </div>
-        <div style="display: inline-block; width: 50%; height: 100%">
-          <div style="width: 100%; height: 40%">
-            <div
-              class="role"
-              :style="{
-                display: 'inline-block',
-                width: '50%',
-                height: '100%',
-                backgroundColor: 'darkgoldenrod',
-                visibility: enableGurdian ? 'visible' : 'hidden',
-              }"
-            >
-              守護天使
-            </div>
-            <div
-              class="role"
-              :style="{
-                display: 'inline-block',
-                width: '50%',
-                height: '100%',
-                backgroundColor: 'darkgreen',
-                visibility: enableCareTaker ? 'visible' : 'hidden',
-              }"
-            >
-              留守番
-            </div>
-          </div>
-          <div style="width: 100%; height: 40%">
-            <div
-              class="role"
-              :style="{
-                display: 'inline-block',
-                width: '30%',
-                height: '100%',
-                backgroundColor: 'darkviolet',
-                visibility: enableAcBeliever ? 'visible' : 'hidden',
-              }"
-            >
-              AC主義者
-            </div>
-            <div
-              class="role"
-              :style="{
-                display: 'inline-block',
-                width: '30%',
-                height: '100%',
-                backgroundColor: 'darkmagenta',
-                visibility: enableBug ? 'visible' : 'hidden',
-              }"
-            >
-              バグ
-            </div>
-            <div
-              ref="gnosia"
-              class="role"
-              style="
-                display: inline-block;
-                width: 40%;
-                height: 100%;
-                background-color: darkred;
-              "
-            >
-              グノーシア
-            </div>
-          </div>
+        <div style="display: inline-block; width: 20%; height: 100%">
           <div
             class="role"
-            style="width: 100%; height: 20%; background-color: black"
+            style="width: 100%; height: 100%; background-color: black"
           >
             未使用
           </div>
@@ -197,8 +163,8 @@
         fluid
         style="position: fixed; bottom: 0; pointer-events: none"
       >
-        <v-row
-          ><v-spacer />
+        <v-row>
+          <v-spacer />
           <v-col
             class="pa-1"
             cols="auto"
@@ -214,16 +180,16 @@
                 @click="setStatusMode(statusType)"
                 style="pointer-events: all"
                 :color="statusMode == statusType ? 'primary' : undefined"
-              >
-              </v-btn>
-            </v-badge> </v-col
-        ></v-row>
-        <v-row
-          ><v-spacer />
+              />
+            </v-badge>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-spacer />
           <v-col
             class="pa-1"
             cols="auto"
-            v-for="raceType in raceTypes"
+            v-for="raceType in enableRaceTypes"
             :key="raceType"
           >
             <v-badge>
@@ -235,13 +201,12 @@
                 @click="setRaceMode(raceType)"
                 style="pointer-events: all"
                 :color="raceMode == raceType ? 'primary' : undefined"
-              >
-              </v-btn>
-            </v-badge> </v-col
-        ></v-row>
+              />
+            </v-badge>
+          </v-col>
+        </v-row>
         <v-row>
           <v-spacer />
-
           <v-col
             class="pa-1"
             cols="auto"
@@ -269,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useTheme } from "vuetify";
 import {
   mdiWeatherSunny,
@@ -330,7 +295,6 @@ import {
 } from "./components/StatusIcon.vue";
 type CharacterIconType = InstanceType<typeof CharacterIcon>;
 const crew = ref<HTMLElement | null>(null);
-const gnosia = ref<HTMLElement | null>(null);
 const characters = reactive<Character[]>(
   characterNames.map((name) => ({
     name,
@@ -382,6 +346,11 @@ const enableAcBeliever = ref(true);
 const enableBug = ref(true);
 const relationMode = ref<RelationType | null>(null);
 const relationFrom = ref<CharacterName | null>(null);
+const enableRaceTypes = computed<RaceType[]>(() => {
+  return raceTypes
+    .filter((race) => enableAcBeliever.value || race != "AC主義者")
+    .filter((race) => enableBug.value || race != "バグ");
+});
 const raceMode = ref<RaceType | null>(null);
 const statusMode = ref<StatusType | null>(null);
 
