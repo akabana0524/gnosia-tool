@@ -2,7 +2,7 @@
   <v-layout full-height>
     <v-app-bar>
       <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer" />
-      <v-toolbar-title>Gnosia tool</v-toolbar-title>
+      <v-toolbar-title>Gnosia whiteboard</v-toolbar-title>
       <v-spacer />
       <v-select
         label="グノーシア人数"
@@ -11,47 +11,15 @@
         style="max-width: 200px"
       />
       <v-btn
+        v-for="(v, k) in enableMap"
+        :key="k"
         icon
         variant="flat"
-        @click="enableEngineer = !enableEngineer"
-        :color="enableEngineer ? 'primary' : undefined"
-        >エ</v-btn
+        @click="v.value = !v.value"
+        :color="v.value ? 'primary' : undefined"
       >
-      <v-btn
-        icon
-        variant="flat"
-        @click="enableDoctor = !enableDoctor"
-        :color="enableDoctor ? 'primary' : undefined"
-        >ド</v-btn
-      >
-      <v-btn
-        icon
-        variant="flat"
-        @click="enableGurdian = !enableGurdian"
-        :color="enableGurdian ? 'primary' : undefined"
-        >守</v-btn
-      >
-      <v-btn
-        icon
-        variant="flat"
-        @click="enableCareTaker = !enableCareTaker"
-        :color="enableCareTaker ? 'primary' : undefined"
-        >留</v-btn
-      >
-      <v-btn
-        icon
-        variant="flat"
-        @click="enableAcBeliever = !enableAcBeliever"
-        :color="enableAcBeliever ? 'primary' : undefined"
-        >AC</v-btn
-      >
-      <v-btn
-        icon
-        variant="flat"
-        @click="enableBug = !enableBug"
-        :color="enableBug ? 'primary' : undefined"
-        >バ</v-btn
-      >
+        {{ k }}
+      </v-btn>
       <v-btn variant="flat" :icon="mdiReload" @click.stop="reset" />
       <v-btn
         :icon="darkTheme ? mdiWeatherNight : mdiWeatherSunny"
@@ -156,6 +124,8 @@
           :from="getCharacterIcon(relation.from)"
           :to="getCharacterIcon(relation.to)"
           :stroke-color="getStrokeColor(relation.type)"
+          :padding-start="IconSize / 2"
+          :padding-end="IconSize / 2"
           @dblclick="removeRelation(index)"
         />
       </div>
@@ -344,6 +314,14 @@ const enableGurdian = ref(true);
 const enableCareTaker = ref(true);
 const enableAcBeliever = ref(true);
 const enableBug = ref(true);
+const enableMap = {
+  エ: enableEngineer,
+  ド: enableDoctor,
+  守: enableGurdian,
+  留: enableCareTaker,
+  AC: enableAcBeliever,
+  バ: enableBug,
+};
 const relationMode = ref<RelationType | null>(null);
 const relationFrom = ref<CharacterName | null>(null);
 const enableRaceTypes = computed<RaceType[]>(() => {
@@ -404,6 +382,12 @@ function drag(name: CharacterName) {
     (character) => character.name == name
   )!;
   currentCharacter.value.active = true;
+  var dragCharacterIndex = characters.findIndex(
+    (character) => character.name == name
+  )!;
+  var character = characters.splice(dragCharacterIndex, 1);
+  characters.splice(characters.length, 0, ...character);
+  console.log("toTop", { character, characters });
 }
 function drop() {
   characters.forEach((character) => (character.active = false));

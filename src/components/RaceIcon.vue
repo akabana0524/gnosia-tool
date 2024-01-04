@@ -1,8 +1,7 @@
 <template>
-  <v-icon
-    :icon="raceTypeIconMap[race]"
-    :style="{ backgroundColor: 'black', color: raceTypeColor[race] }"
-  />
+  <v-avatar :color="raceTypeColor[race]">
+    <v-icon :icon="raceTypeIconMap[race]" />
+  </v-avatar>
 </template>
 <script lang="ts">
 import { mdiBomb, mdiHelp, mdiHuman, mdiPirate, mdiSkull } from "@mdi/js";
@@ -23,7 +22,7 @@ export const raceTypeIconMap: { [type in RaceType]: string } = {
 };
 export const raceTypeColor: { [type in RaceType]: string } = {
   不明: "white",
-  人間: "white",
+  人間: "teal-accent-2",
   AC主義者: "red",
   バグ: "red",
   グノーシア: "red",

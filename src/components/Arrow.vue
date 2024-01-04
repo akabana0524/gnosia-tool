@@ -13,12 +13,14 @@
         (position.y - (strokeWidth * arrowHeadScale) / 2) +
         'px) rotate(' +
         degree +
-        'deg)',
+        'deg) translate(' +
+        paddingStart +
+        'px, 0px)',
     }"
   >
     <svg
       ref="svg"
-      :width="length + 'px'"
+      :width="Math.max(length - paddingStart - paddingEnd, 0) + 'px'"
       :height="strokeWidth * arrowHeadScale + 'px'"
       style="vertical-align: top"
     >
@@ -38,7 +40,11 @@
       <line
         :x1="strokeWidth / 2"
         :y1="(strokeWidth * arrowHeadScale) / 2"
-        :x2="length - (strokeWidth * arrowHeadScale) / 2"
+        :x2="
+          length -
+          (strokeWidth * arrowHeadScale) / 2 -
+          (paddingStart + paddingEnd)
+        "
         :y2="(strokeWidth * arrowHeadScale) / 2"
         :stroke="strokeColor"
         :stroke-width="strokeWidth"
@@ -53,13 +59,18 @@ import { onMounted, reactive, ref } from "vue";
 import { computed } from "vue";
 import { toRefs } from "vue";
 
-const props = defineProps<{
-  from: HTMLElement;
-  to: HTMLElement;
-  strokeColor: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    from: HTMLElement;
+    to: HTMLElement;
+    strokeColor: string;
+    paddingStart?: number;
+    paddingEnd?: number;
+  }>(),
+  { paddingStart: 0, paddingEnd: 0 }
+);
 const randomId = crypto.randomUUID();
-const { from, to, strokeColor } = toRefs(props);
+const { from, to, strokeColor, paddingStart, paddingEnd } = toRefs(props);
 const arrowHeadScale = ref(6);
 const strokeWidth = ref(5);
 const mounted = ref(false);

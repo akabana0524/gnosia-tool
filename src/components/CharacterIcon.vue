@@ -11,10 +11,7 @@
       height: IconSize + 'px',
       textAlign: 'center',
       borderRadius: IconSize / 2 + 'px',
-      filter:
-        (character.active ? ' drop-shadow(0px 0px 5px #fff)' : '') +
-        (character.status == 'コールドスリープ' ? ' ' : '') +
-        (character.status == '消滅' ? ' ' : ''),
+      filter: character.active ? 'drop-shadow(0px 0px 5px #fff)' : '',
     }"
     @mouseenter="inRange = true"
     @mouseleave="inRange = false"
@@ -27,7 +24,7 @@
         width: IconSize + 'px',
         height: IconSize + 'px',
         borderRadius: IconSize / 2 + 'px',
-        backgroundColor: character.status == '消滅' ? 'red' : 'black',
+        backgroundColor: character.status == '消滅' ? 'darkred' : 'black',
         opacity: 0.8,
       }"
     ></div>
@@ -35,7 +32,8 @@
       :style="{
         display: 'table-cell',
         textAlign: 'center',
-        verticalAlign: 'middle',
+        verticalAlign: 'top',
+        paddingTop: '2em',
       }"
     >
       <span
