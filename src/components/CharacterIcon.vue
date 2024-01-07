@@ -106,6 +106,7 @@ export interface Character {
   active: boolean;
   race: RaceType;
   status: StatusType;
+  zIndex: number;
 }
 export const IconSize = 100;
 </script>

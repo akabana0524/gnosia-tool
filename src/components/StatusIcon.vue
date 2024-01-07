@@ -13,7 +13,7 @@ export const statusIconTypeMap: { [type in StatusType]: string } = {
   コールドスリープ: mdiSnowflake,
   消滅: mdiVanish,
 };
-const statusTypeColor: { [type in StatusType]: string } = {
+export const statusTypeColor: { [type in StatusType]: string } = {
   通常: "white",
   コールドスリープ: "indigo-darken-4",
   消滅: "grey-darken-3",

@@ -34,8 +34,9 @@
       <div
         id="whiteboard"
         @mousemove="mousemove"
-        @mouseup="drop"
+        @mouseup="mouseup"
         style="user-select: none"
+        @click="clickCharacter(null)"
       >
         <div style="display: inline-block; width: 80%; height: 100%">
           <div style="width: 100%; height: 60%">
@@ -115,8 +116,9 @@
           :ref="(el) => setCharacterRef(el as CharacterIconType, index)"
           :key="index"
           :character="character"
-          @mousedown="drag(character.name)"
-          @click="clickCharacter(character.name)"
+          @mousedown="mouswdownCharacter(character.name)"
+          @click.stop="clickCharacter(character.name)"
+          :style="{ zIndex: character.zIndex }"
         />
         <Arrow
           v-for="(relation, index) in relations"
@@ -128,77 +130,14 @@
           :padding-end="IconSize / 2"
           @dblclick="removeRelation(index)"
         />
+        <RingMenu
+          v-model:open="isRingMenuOpen"
+          :el="ringMenuTarget"
+          :items="ringMenuItems"
+          :radius="70"
+          :sytle="{ zIndex: 1000 }"
+        />
       </div>
-      <v-container
-        fluid
-        style="position: fixed; bottom: 0; pointer-events: none"
-      >
-        <v-row>
-          <v-spacer />
-          <v-col
-            class="pa-1"
-            cols="auto"
-            v-for="statusType in statusTypes"
-            :key="statusType"
-          >
-            <v-badge>
-              <template v-slot:badge>
-                <v-icon :icon="mdiPen" />
-              </template>
-              <v-btn
-                :icon="statusIconTypeMap[statusType]"
-                @click="setStatusMode(statusType)"
-                style="pointer-events: all"
-                :color="statusMode == statusType ? 'primary' : undefined"
-              />
-            </v-badge>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-spacer />
-          <v-col
-            class="pa-1"
-            cols="auto"
-            v-for="raceType in enableRaceTypes"
-            :key="raceType"
-          >
-            <v-badge>
-              <template v-slot:badge>
-                <v-icon :icon="mdiPen" />
-              </template>
-              <v-btn
-                :icon="raceTypeIconMap[raceType]"
-                @click="setRaceMode(raceType)"
-                style="pointer-events: all"
-                :color="raceMode == raceType ? 'primary' : undefined"
-              />
-            </v-badge>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-spacer />
-          <v-col
-            class="pa-1"
-            cols="auto"
-            v-for="relationType in relationTypes"
-            :key="relationType"
-          >
-            <v-badge>
-              <template v-slot:badge>
-                <v-icon :icon="mdiArrowTopRightThin" />
-              </template>
-              <v-btn
-                icon
-                @click="setRelationMode(relationType)"
-                style="pointer-events: all"
-                :color="relationMode == relationType ? 'primary' : undefined"
-              >
-                {{ relationType.charAt(0) }}
-              </v-btn>
-            </v-badge>
-          </v-col>
-        </v-row>
-      </v-container>
     </v-main>
   </v-layout>
 </template>
@@ -215,13 +154,7 @@ import {
 } from "@mdi/js";
 import Arrow from "./components/Arrow.vue";
 
-const relationTypes = [
-  "疑う",
-  "庇う",
-  "人間だ",
-  "敵だ",
-  "グノーシアだ",
-] as const;
+const relationTypes = ["疑う", "庇う", "人間だ", "グノーシアだ"] as const;
 type RelationType = (typeof relationTypes)[number];
 interface Relation {
   from: CharacterName;
@@ -255,14 +188,18 @@ import CharacterIcon, {
 import { onMounted } from "vue";
 import {
   RaceType,
+  raceTypeColor,
   raceTypeIconMap,
   raceTypes,
 } from "./components/RaceIcon.vue";
 import {
   StatusType,
   statusIconTypeMap,
+  statusTypeColor,
   statusTypes,
 } from "./components/StatusIcon.vue";
+import RingMenu, { RingMenuItem } from "./components/RingMenu.vue";
+import { nextTick } from "vue";
 type CharacterIconType = InstanceType<typeof CharacterIcon>;
 const crew = ref<HTMLElement | null>(null);
 const characters = reactive<Character[]>(
@@ -274,6 +211,7 @@ const characters = reactive<Character[]>(
     status: "通常",
     position: { x: 0, y: 0 },
     active: false,
+    zIndex: 100,
   }))
 );
 const relations = reactive<Relation[]>([]);
@@ -300,12 +238,40 @@ function getStrokeColor(relationType: RelationType) {
       return "darkmagenta";
     case "人間だ":
       return "lightgray";
-    case "敵だ":
-      return "darkred";
     case "グノーシアだ":
       return "red";
   }
 }
+const isRingMenuOpen = ref(false);
+const ringMenuItems = computed<RingMenuItem[]>(() => [
+  ...statusTypes.map((statusType) => ({
+    icon: statusIconTypeMap[statusType],
+    iconColor: statusTypeColor[statusType],
+    badge: mdiPen,
+    badgeColor: "primary",
+    onClick: () => {
+      setCurrentCharacterStatus(statusType);
+      clickCharacter(currentCharacter.value!.name);
+    },
+  })),
+  ...raceTypes
+    .filter((raceType) => enableAcBeliever.value || raceType != "AC主義者")
+    .filter((raceType) => enableBug.value || raceType != "バグ")
+    .map((raceType) => ({
+      icon: raceTypeIconMap[raceType],
+      iconColor: raceTypeColor[raceType],
+      badge: mdiPen,
+      badgeColor: "secondary",
+      onClick: () => setCurrentCharacterRace(raceType),
+    })),
+  ...relationTypes.map((relationType) => ({
+    text: relationType.charAt(0),
+    badge: mdiArrowTopRightThin,
+    badgeColor: "warning",
+    onClick: () => setRelationMode(relationType),
+  })),
+]);
+const ringMenuTarget = ref<HTMLElement | null>(null);
 const currentCharacter = ref<Character | null>(null);
 const numGnosia = ref(0);
 const enableDoctor = ref(true);
@@ -322,82 +288,93 @@ const enableMap = {
   AC: enableAcBeliever,
   バ: enableBug,
 };
+const mousedown = ref(false);
+const dragging = ref(false);
 const relationMode = ref<RelationType | null>(null);
 const relationFrom = ref<CharacterName | null>(null);
-const enableRaceTypes = computed<RaceType[]>(() => {
-  return raceTypes
-    .filter((race) => enableAcBeliever.value || race != "AC主義者")
-    .filter((race) => enableBug.value || race != "バグ");
-});
-const raceMode = ref<RaceType | null>(null);
-const statusMode = ref<StatusType | null>(null);
 
-function resetMode() {
-  relationMode.value = null;
-  raceMode.value = null;
-  statusMode.value = null;
-}
 function setRelationMode(relationType: RelationType) {
-  resetMode();
   relationMode.value = relationType;
+  const characterName = currentCharacter.value!.name;
+  relationFrom.value = characterName;
+  characters.find((character) => character.name == characterName)!.active =
+    true;
 }
-function setRaceMode(raceType: RaceType) {
-  resetMode();
-  raceMode.value = raceType;
+function setCurrentCharacterRace(raceType: RaceType) {
+  characters.find(
+    (character) => character.name == currentCharacter.value!.name
+  )!.race = raceType;
 }
-function setStatusMode(statusType: StatusType) {
-  resetMode();
-  statusMode.value = statusType;
+function setCurrentCharacterStatus(statusType: StatusType) {
+  characters.find(
+    (character) => character.name == currentCharacter.value!.name
+  )!.status = statusType;
 }
 
-function clickCharacter(characterName: CharacterName) {
-  if (relationMode.value != null) {
-    if (relationFrom.value == null) {
-      relationFrom.value = characterName;
-      characters.find((character) => character.name == characterName)!.active =
-        true;
-    } else {
+function clickCharacter(characterName: CharacterName | null) {
+  if (characterName) {
+    if (relationMode.value != null) {
       relations.push({
         type: relationMode.value!,
         from: relationFrom.value!,
         to: characterName,
       });
-      relationMode.value = null;
-      relationFrom.value = null;
-      characters.forEach((character) => (character.active = false));
+      resetMode();
+    } else {
+      setCurrentCharacter(characterName);
+      isRingMenuOpen.value = false;
+      ringMenuTarget.value = null;
+      nextTick(() => {
+        ringMenuTarget.value = getCharacterIcon(characterName);
+        isRingMenuOpen.value = true;
+      });
     }
-  } else if (raceMode.value != null) {
-    characters.find((character) => character.name == characterName)!.race =
-      raceMode.value;
-    raceMode.value = null;
-  } else if (statusMode.value != null) {
-    characters.find((character) => character.name == characterName)!.status =
-      statusMode.value;
-    statusMode.value = null;
+  } else {
+    resetMode();
+  }
+}
+function resetMode() {
+  relationMode.value = null;
+  relationFrom.value = null;
+  characters.forEach((character) => (character.active = false));
+  isRingMenuOpen.value = false;
+  ringMenuTarget.value = null;
+}
+
+function setCurrentCharacter(characterName: CharacterName | null) {
+  if (characterName) {
+    currentCharacter.value = characters.find(
+      (character) => character.name == characterName
+    )!;
+    currentCharacter.value.active = true;
+    currentCharacter.value.zIndex = 100;
+    characters
+      .filter((character) => character.name != characterName)
+      .forEach((character) => character.zIndex--);
+  } else {
+    characters.forEach((character) => (character.active = false));
+    currentCharacter.value = null;
   }
 }
 
-function drag(name: CharacterName) {
-  currentCharacter.value = characters.find(
-    (character) => character.name == name
-  )!;
-  currentCharacter.value.active = true;
-  var dragCharacterIndex = characters.findIndex(
-    (character) => character.name == name
-  )!;
-  var character = characters.splice(dragCharacterIndex, 1);
-  characters.splice(characters.length, 0, ...character);
-  console.log("toTop", { character, characters });
+function mouswdownCharacter(name: CharacterName) {
+  setCurrentCharacter(name);
+  mousedown.value = true;
 }
-function drop() {
-  characters.forEach((character) => (character.active = false));
-  currentCharacter.value = null;
+
+function mouseup() {
+  if (dragging.value) {
+    setCurrentCharacter(null);
+    dragging.value = false;
+  }
+  mousedown.value = false;
 }
 
 function mousemove(e: MouseEvent) {
-  if (currentCharacter.value) {
+  if (mousedown.value && currentCharacter.value) {
     currentCharacter.value.position.x += e.movementX;
     currentCharacter.value.position.y += e.movementY;
+    dragging.value = true;
   }
 }
 function reset() {
@@ -412,6 +389,7 @@ function reset() {
     character.position.x = (crewWidth / 6) * (index % 6);
     character.position.y =
       crewHeight - IconSize * 3 + IconSize * Math.floor(index / 6);
+    character.zIndex = 100;
   });
   relations.splice(0, relations.length);
 }
